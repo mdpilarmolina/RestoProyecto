@@ -3,6 +3,8 @@ import cors from "cors";
 import morgan from "morgan";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import authRoutes from "../routes/auth.routes.js";
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -16,8 +18,7 @@ app.use(express.static(path.join(__dirname, "../../public")));
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "RestoProyecto API funcionando" });
 });
-
-// 404 para cualquier ruta no mapeada
+app.use("/api/auth", authRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: "Ruta no encontrada" });
 });
