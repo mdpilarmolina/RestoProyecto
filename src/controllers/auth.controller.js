@@ -49,3 +49,6 @@ export const login = async (req, res) => {
     user: publicUser(user),
   });
 };
+export const me = async (req, res) => {
+  res.json({ user: publicUser(req.user) });
+};
