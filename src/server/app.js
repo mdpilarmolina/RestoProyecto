@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import authRoutes from "../routes/auth.routes.js";
 import productRoutes from "../routes/product.routes.js";
+import orderRoutes from "../routes/order.routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -22,7 +23,7 @@ app.get("/api/health", (req, res) => {
 // Rutas de la API (siempre ANTES del 404)
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
-
+app.use("/api/orders", orderRoutes);
 // 404 para cualquier ruta no mapeada
 app.use((req, res) => {
   res.status(404).json({ message: "Ruta no encontrada" });
