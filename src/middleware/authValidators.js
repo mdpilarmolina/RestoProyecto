@@ -1,7 +1,7 @@
 import { body } from "express-validator";
 
 // Mínimo 6 caracteres, al menos 2 números y al menos 2 letras
-const PASSWORD_REGEX = /^(?=(?:.*\d){2,})(?=(?:.*\p{L}){2,}).{6,}$/u;
+export const PASSWORD_REGEX = /^(?=(?:.*\d){2,})(?=(?:.*\p{L}){2,}).{6,}$/u;
 
 export const registerRules = [
   body("name")
