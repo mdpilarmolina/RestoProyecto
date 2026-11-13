@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import helmet from "helmet";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import authRoutes from "../routes/auth.routes.js";
@@ -10,13 +11,18 @@ import accountRoutes from "../routes/account.routes.js";
 import adminRoutes from "../routes/admin.routes.js";
 import contactRoutes from "../routes/contact.routes.js";
 
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-app.use(cors());
+app.set("trust proxy", 1); // detrás del proxy del hosting, para que el rate limit vea la IP real
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : true,
+  })
+);
 app.use(morgan("dev"));
-app.use(express.json());
+app.use(express.json({ limit: "10kb" }));
 app.use(express.static(path.join(__dirname, "../../public")));
 
 // Ruta de prueba
@@ -31,6 +37,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/contact", contactRoutes);
+
 // 404 para cualquier ruta no mapeada
 app.use((req, res) => {
   res.status(404).json({ message: "Ruta no encontrada" });
@@ -39,9 +46,12 @@ app.use((req, res) => {
 // Manejo central de errores
 app.use((err, req, res, next) => {
   console.error(err);
-  res
-    .status(err.status || 500)
-    .json({ message: err.message || "Error interno del servidor" });
+  const status = err.status || 500;
+  const message =
+    status === 500 && process.env.NODE_ENV === "production"
+      ? "Error interno del servidor"
+      : err.message || "Error interno del servidor";
+  res.status(status).json({ message });
 });
 
 export default app;
