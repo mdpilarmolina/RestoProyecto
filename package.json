@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index",
     "dev": "node --env-file .env --watch index",
-    "seed:admin": "node --env-file .env src/database/seedAdmin.js"
+    "seed:admin": "node --env-file .env src/database/seedAdmin.js",
+    "seed:demo": "node --env-file .env src/database/seedDemo.js"
   },
   "keywords": [],
   "author": "Ma. del Pilar Molina",
