@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { sendWelcomeEmail } from "../utils/mailer.js";
 
 const signToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
@@ -24,7 +25,11 @@ export const register = async (req, res) => {
 
   const hash = await bcrypt.hash(password, 10);
   const user = await User.create({ name, email, password: hash, role: "client" });
-
+  // El mail es un extra: si falla, el registro igual se completa
+  sendWelcomeEmail(user).catch((err) =>
+    console.warn("No se pudo enviar el mail de bienvenida:", err.message)
+  );
+  
   res.status(201).json({
     message: "Cuenta creada correctamente",
     token: signToken(user),

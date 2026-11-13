@@ -7,6 +7,8 @@ import authRoutes from "../routes/auth.routes.js";
 import productRoutes from "../routes/product.routes.js";
 import orderRoutes from "../routes/order.routes.js";
 import accountRoutes from "../routes/account.routes.js";
+import contactRoutes from "../routes/contact.routes.js";
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -26,6 +28,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/account", accountRoutes);
+app.use("/api/contact", contactRoutes);
 // 404 para cualquier ruta no mapeada
 app.use((req, res) => {
   res.status(404).json({ message: "Ruta no encontrada" });
