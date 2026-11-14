@@ -1,6 +1,10 @@
 import Reservation from "../models/Reservation.js";
 import { RESERVATION as R } from "../config/reservation.js";
 import { buildItems, saveOrder } from "../utils/orderHelpers.js";
+import {
+  sendReservationEmails,
+  sendReservationCancelledEmails,
+} from "../utils/mailer.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ACTIVE = ["confirmada"];
@@ -97,6 +101,11 @@ export const createReservation = async (req, res) => {
     total,
   });
 
+  // El mail es un extra: si falla, la reserva igual queda hecha
+  sendReservationEmails({ user: req.user, reservation }).catch((err) =>
+    console.warn("No se pudo enviar el mail de la reserva:", err.message)
+  );
+
   res.status(201).json({ message: "Reserva confirmada", reservation });
 };
 
@@ -118,6 +127,11 @@ export const cancelReservation = async (req, res) => {
 
   reservation.status = "cancelada";
   await reservation.save();
+
+  sendReservationCancelledEmails({ user: req.user, reservation }).catch((err) =>
+    console.warn("No se pudo enviar el mail de cancelación:", err.message)
+  );
+
   res.json({ message: "Reserva cancelada", reservation });
 };
 
