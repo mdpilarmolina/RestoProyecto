@@ -1,6 +1,7 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
+import Reservation from "../models/Reservation.js";
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -113,4 +114,35 @@ export const setClientActive = async (req, res) => {
     message: user.active ? "Cliente reactivado" : "Cliente dado de baja",
     client: user,
   });
+};
+
+// Reservas: ?date=2026-11-20 muestra las de ese día (hora de Argentina)
+export const listReservations = async (req, res) => {
+  const { page, limit, skip } = getPagination(req.query);
+  const filter = {};
+
+  if (req.query.date) {
+    const start = new Date(`${req.query.date.slice(0, 10)}T00:00:00-03:00`);
+    filter.date = { $gte: start, $lt: new Date(start.getTime() + 24 * 60 * 60 * 1000) };
+  }
+
+  const [reservations, total] = await Promise.all([
+    Reservation.find(filter).sort({ date: 1 }).skip(skip).limit(limit).populate("user", "name email"),
+    Reservation.countDocuments(filter),
+  ]);
+
+  res.json({ reservations, total, page, pages: Math.ceil(total / limit) });
+};
+
+export const setReservationStatus = async (req, res) => {
+  const reservation = await Reservation.findById(req.params.id);
+  if (!reservation) return res.status(404).json({ message: "Reserva no encontrada" });
+
+  if (reservation.status !== "confirmada") {
+    return res.status(409).json({ message: "Solo se pueden modificar reservas confirmadas" });
+  }
+
+  reservation.status = req.body.status;
+  await reservation.save();
+  res.json({ message: "Reserva actualizada", reservation });
 };
