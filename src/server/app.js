@@ -10,6 +10,7 @@ import orderRoutes from "../routes/order.routes.js";
 import accountRoutes from "../routes/account.routes.js";
 import adminRoutes from "../routes/admin.routes.js";
 import contactRoutes from "../routes/contact.routes.js";
+import reservationRoutes from "../routes/reservation.routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -37,6 +38,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/reservations", reservationRoutes);
 
 // 404 para cualquier ruta no mapeada
 app.use((req, res) => {
