@@ -1,4 +1,4 @@
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 import { CATEGORIES } from "../models/Product.js";
 
 export const idRule = [param("id").isMongoId().withMessage("ID de producto inválido")];
@@ -21,4 +21,23 @@ export const productRules = [
   body("isVegetarian").optional().isBoolean().toBoolean(),
   body("isVegan").optional().isBoolean().toBoolean(),
   body("isGlutenFree").optional().isBoolean().toBoolean(),
+];
+
+// Cambiar solo la disponibilidad: PATCH /api/products/:id/availability con { "available": false }
+export const productAvailabilityRule = [
+  body("available")
+    .isBoolean({ strict: true })
+    .withMessage("'available' es obligatorio y debe ser true o false"),
+];
+
+// Filtros de la carta: ?category=postres&vegan=true&glutenFree=true&search=queso
+export const productFilterRules = [
+  query("category")
+    .optional()
+    .isIn(CATEGORIES)
+    .withMessage(`La categoría debe ser una de: ${CATEGORIES.join(", ")}`),
+  query("vegetarian").optional().isIn(["true", "false"]).withMessage("'vegetarian' debe ser true o false"),
+  query("vegan").optional().isIn(["true", "false"]).withMessage("'vegan' debe ser true o false"),
+  query("glutenFree").optional().isIn(["true", "false"]).withMessage("'glutenFree' debe ser true o false"),
+  query("search").optional().isLength({ max: 100 }).withMessage("La búsqueda admite hasta 100 caracteres"),
 ];
