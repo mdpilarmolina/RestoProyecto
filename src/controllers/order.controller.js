@@ -2,7 +2,7 @@ import Order from "../models/Order.js";
 import { buildItems, saveOrder } from "../utils/orderHelpers.js";
 
 export const createOrder = async (req, res) => {
-  const { table, items } = req.body;
+  const { table, items, notes } = req.body;
 
   // Revisa productos y calcula el total (si hay un problema, responde con el error)
   const result = await buildItems(items);
@@ -16,6 +16,7 @@ export const createOrder = async (req, res) => {
     table,
     orderItems: result.orderItems,
     total: result.total,
+    notes,
   });
 
   res.status(201).json({ message: "Pedido realizado", order });
