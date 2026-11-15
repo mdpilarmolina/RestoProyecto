@@ -1,8 +1,8 @@
-import Product from "../models/Product.js";
+import Product, { CATEGORIES } from "../models/Product.js";
 
 // Solo estos campos se aceptan desde el body (timesOrdered nunca se toca desde afuera)
 const FIELDS = [
-  "name", "image", "price", "description", "available",
+  "name", "image", "price", "description", "available", "category", "sortOrder",
   "ingredients", "isVegetarian", "isVegan", "isGlutenFree",
 ];
 
@@ -13,7 +13,7 @@ export const listProducts = async (req, res) => {
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const limit = Math.max(parseInt(req.query.limit) || 0, 0); // 0 = sin paginar
 
-  const query = Product.find().sort({ name: 1 });
+  const query = Product.find().sort({ sortOrder: 1, name: 1 });
   if (req.user.role !== "admin") query.select("-timesOrdered"); // las estadísticas son del admin
   if (limit > 0) query.skip((page - 1) * limit).limit(limit);
 
@@ -21,6 +21,7 @@ export const listProducts = async (req, res) => {
 
   res.json({
     products,
+    categories: CATEGORIES, // las secciones de la carta, en orden, para armar las pestañas del front
     total,
     page,
     pages: limit > 0 ? Math.ceil(total / limit) : 1,

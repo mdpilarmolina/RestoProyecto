@@ -3,7 +3,11 @@ import Product from "../models/Product.js";
 import User from "../models/User.js";
 import Reservation from "../models/Reservation.js";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
 const round2 = (n) => Math.round(n * 100) / 100;
+
+// Escapa los caracteres especiales para buscar texto literal dentro de una expresión regular
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const getPagination = (query) => {
   const page = Math.max(parseInt(query.page) || 1, 1);
@@ -68,20 +72,36 @@ export const getStats = async (req, res) => {
   });
 };
 
+// Pedidos con filtros opcionales: ?date=2026-11-20&table=7&status=Pedido realizado
 export const listOrders = async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
+  const filter = {};
+
+  // ?date=AAAA-MM-DD -> pedidos de ese día (hora de Argentina)
+  if (req.query.date) {
+    const start = new Date(`${req.query.date}T00:00:00-03:00`);
+    filter.createdAt = { $gte: start, $lt: new Date(start.getTime() + DAY_MS) };
+  }
+  if (req.query.table) filter.table = Number(req.query.table);
+  if (req.query.status) filter.status = req.query.status;
 
   const [orders, total] = await Promise.all([
-    Order.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("user", "name email"),
-    Order.countDocuments(),
+    Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("user", "name email"),
+    Order.countDocuments(filter),
   ]);
 
   res.json({ orders, total, page, pages: Math.ceil(total / limit) });
 };
 
+// Clientes con búsqueda opcional: ?search=lucia (nombre o email)
 export const listClients = async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
   const filter = { role: "client" };
+
+  if (req.query.search) {
+    const pattern = new RegExp(escapeRegex(req.query.search.trim()), "i");
+    filter.$or = [{ name: pattern }, { email: pattern }];
+  }
 
   const [clients, total] = await Promise.all([
     User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
@@ -123,7 +143,7 @@ export const listReservations = async (req, res) => {
 
   if (req.query.date) {
     const start = new Date(`${req.query.date.slice(0, 10)}T00:00:00-03:00`);
-    filter.date = { $gte: start, $lt: new Date(start.getTime() + 24 * 60 * 60 * 1000) };
+    filter.date = { $gte: start, $lt: new Date(start.getTime() + DAY_MS) };
   }
 
   const [reservations, total] = await Promise.all([

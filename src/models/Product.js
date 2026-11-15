@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+// Secciones de la carta, en el orden en que se muestran
+export const CATEGORIES = ["entradas", "principales", "postres", "bebidas"];
+
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: [true, "El nombre es obligatorio"], trim: true },
@@ -7,6 +10,14 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: [true, "El precio es obligatorio"], min: 0 },
     description: { type: String, required: [true, "La descripción es obligatoria"], trim: true },
     available: { type: Boolean, default: true },
+
+    // Para ordenar y agrupar la carta
+    category: {
+      type: String,
+      enum: { values: CATEGORIES, message: "La categoría no es válida" },
+      default: "principales",
+    },
+    sortOrder: { type: Number, default: 0, min: 0 }, // orden de aparición (menor = primero)
 
     // Opcionales
     ingredients: { type: [String], default: [] },
