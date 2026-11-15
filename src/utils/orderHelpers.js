@@ -46,8 +46,8 @@ export const buildItems = async (items) => {
 };
 
 // Guarda el pedido y actualiza los contadores para las estadísticas
-export const saveOrder = async ({ userId, table, orderItems, total }) => {
-  const order = await Order.create({ user: userId, table, items: orderItems, total });
+export const saveOrder = async ({ userId, table, orderItems, total, notes }) => {
+  const order = await Order.create({ user: userId, table, items: orderItems, total, notes });
 
   await Promise.all([
     User.updateOne({ _id: userId }, { $inc: { ordersCount: 1 } }),
@@ -59,4 +59,23 @@ export const saveOrder = async ({ userId, table, orderItems, total }) => {
   ]);
 
   return order;
+};
+
+// Deshace lo que sumó saveOrder cuando un pedido se cancela (nunca baja de 0)
+export const revertOrderStats = async (order) => {
+  await Promise.all([
+    User.updateOne({ _id: order.user }, [
+      { $set: { ordersCount: { $max: [0, { $subtract: ["$ordersCount", 1] }] } } },
+    ]),
+    Product.bulkWrite(
+      order.items.map((i) => ({
+        updateOne: {
+          filter: { _id: i.product },
+          update: [
+            { $set: { timesOrdered: { $max: [0, { $subtract: ["$timesOrdered", i.quantity] }] } } },
+          ],
+        },
+      }))
+    ),
+  ]);
 };

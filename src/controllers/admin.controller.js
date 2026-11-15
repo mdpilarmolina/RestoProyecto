@@ -2,12 +2,11 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 import Reservation from "../models/Reservation.js";
+import { revertOrderStats } from "../utils/orderHelpers.js";
+import { escapeRegex } from "../utils/text.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const round2 = (n) => Math.round(n * 100) / 100;
-
-// Escapa los caracteres especiales para buscar texto literal dentro de una expresión regular
-const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const getPagination = (query) => {
   const page = Math.max(parseInt(query.page) || 1, 1);
@@ -30,14 +29,20 @@ export const getStats = async (req, res) => {
     clientsWithoutOrders,
     totalProducts,
     unavailableProducts,
+    cancelledOrders,
   ] = await Promise.all([
     Product.find({ timesOrdered: { $gt: 0 } })
       .sort({ timesOrdered: -1, name: 1 }).limit(5).select("name price timesOrdered"),
     Product.find().sort({ timesOrdered: 1, name: 1 }).limit(5).select("name price timesOrdered"),
     User.find(clientsWithOrders).sort({ ordersCount: -1, name: 1 }).limit(5).select("name email ordersCount"),
     User.find(clientsWithOrders).sort({ ordersCount: 1, name: 1 }).limit(5).select("name email ordersCount"),
-    Order.aggregate([{ $group: { _id: null, orders: { $sum: 1 }, revenue: { $sum: "$total" } } }]),
+    // Los pedidos cancelados no cuentan como ventas ni como mesas ocupadas
     Order.aggregate([
+      { $match: { status: { $ne: "Cancelado" } } },
+      { $group: { _id: null, orders: { $sum: 1 }, revenue: { $sum: "$total" } } },
+    ]),
+    Order.aggregate([
+      { $match: { status: { $ne: "Cancelado" } } },
       { $group: { _id: "$table", orders: { $sum: 1 } } },
       { $sort: { orders: -1, _id: 1 } },
       { $limit: 5 },
@@ -46,6 +51,7 @@ export const getStats = async (req, res) => {
     User.countDocuments({ ...activeClients, ordersCount: 0 }),
     Product.countDocuments(),
     Product.countDocuments({ available: false }),
+    Order.countDocuments({ status: "Cancelado" }),
   ]);
 
   const { orders = 0, revenue = 0 } = totals[0] || {};
@@ -55,6 +61,7 @@ export const getStats = async (req, res) => {
       total: orders,
       revenue: round2(revenue),
       averageTicket: orders ? round2(revenue / orders) : 0,
+      cancelled: cancelledOrders,
     },
     products: {
       total: totalProducts,
@@ -91,6 +98,28 @@ export const listOrders = async (req, res) => {
   ]);
 
   res.json({ orders, total, page, pages: Math.ceil(total / limit) });
+};
+
+// El administrador cierra un pedido: "Entregado" o "Cancelado" (solo desde "Pedido realizado")
+export const setOrderStatus = async (req, res) => {
+  // Una sola operación atómica: si dos personas lo intentan a la vez, solo una lo logra
+    const order = await Order.findOneAndUpdate(
+    { _id: req.params.id, status: "Pedido realizado" },
+    { status: req.body.status, closedAt: new Date() },
+    { returnDocument: "after" }
+  );
+
+  if (!order) {
+    const exists = await Order.exists({ _id: req.params.id });
+    return exists
+      ? res.status(409).json({ message: "Solo se pueden modificar pedidos en estado 'Pedido realizado'" })
+      : res.status(404).json({ message: "Pedido no encontrado" });
+  }
+
+  // Un pedido cancelado no cuenta en las estadísticas del cliente ni de los productos
+  if (order.status === "Cancelado") await revertOrderStats(order);
+
+  res.json({ message: `Pedido ${order.status.toLowerCase()}`, order });
 };
 
 // Clientes con búsqueda opcional: ?search=lucia (nombre o email)

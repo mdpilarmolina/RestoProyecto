@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+// Estados del pedido: se crea como "Pedido realizado"; el administrador lo pasa a "Entregado" o "Cancelado"
+export const ORDER_STATUSES = ["En espera", "Pedido realizado", "Entregado", "Cancelado"];
+
 const orderItemSchema = new mongoose.Schema(
   {
     product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
@@ -19,11 +22,13 @@ const orderSchema = new mongoose.Schema(
       validate: [(items) => items.length > 0, "El pedido no puede estar vacío"],
     },
     total: { type: Number, required: true, min: 0 },
+    notes: { type: String, trim: true, maxlength: 200 }, // aclaraciones para cocina ("sin cebolla")
     status: {
       type: String,
-      enum: ["En espera", "Pedido realizado"],
+      enum: ORDER_STATUSES,
       default: "Pedido realizado",
     },
+    closedAt: { type: Date }, // cuándo se entregó o se canceló
   },
   { timestamps: true }
 );
