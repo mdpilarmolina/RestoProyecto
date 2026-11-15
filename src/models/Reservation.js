@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { RESERVATION as R } from "../config/reservation.js";
 
 const preorderItemSchema = new mongoose.Schema(
   {
@@ -14,7 +15,7 @@ const reservationSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     date: { type: Date, required: [true, "La fecha y hora son obligatorias"] },
-    people: { type: Number, required: true, min: 1, max: 12 },
+    people: { type: Number, required: true, min: 1, max: R.MAX_PEOPLE },
     notes: { type: String, trim: true, maxlength: 300 },
     status: {
       type: String,

@@ -15,6 +15,7 @@ const localHourAndMinutes = (date) => {
   const local = new Date(date.getTime() + LOCAL_OFFSET_MS);
   return { hour: local.getUTCHours(), minutes: local.getUTCMinutes() };
 };
+const pad = (n) => String(n).padStart(2, "0");
 
 // Devuelve un mensaje de error si el horario no es válido, o null si está bien
 const slotError = (date) => {
@@ -36,27 +37,86 @@ const slotError = (date) => {
   return null;
 };
 
+// Rango en el que una reserva nueva en `date` se superpone con otras
+const overlapRange = (date) => ({
+  $gt: new Date(date.getTime() - R.DURATION_MS),
+  $lt: new Date(date.getTime() + R.DURATION_MS),
+});
+
 // Cuántas personas ya tienen lugar en ese horario (reservas que se superponen)
 const seatsTaken = async (date) => {
   const overlapping = await Reservation.find({
     status: { $in: ACTIVE },
-    date: {
-      $gt: new Date(date.getTime() - R.DURATION_MS),
-      $lt: new Date(date.getTime() + R.DURATION_MS),
-    },
+    date: overlapRange(date),
   }).select("people");
   return overlapping.reduce((sum, r) => sum + r.people, 0);
 };
 
+// Lo mismo, pero sobre una lista de reservas ya cargada (para calcular todo un día de una vez)
+const seatsTakenIn = (reservations, date) =>
+  reservations
+    .filter(
+      (r) =>
+        r.date.getTime() > date.getTime() - R.DURATION_MS &&
+        r.date.getTime() < date.getTime() + R.DURATION_MS
+    )
+    .reduce((sum, r) => sum + r.people, 0);
+
+// Consultar un horario puntual. Un horario no válido NO es un error: responde available:false
 export const checkAvailability = async (req, res) => {
   const date = new Date(req.query.date);
   const people = Number(req.query.people);
 
-  const error = slotError(date);
-  if (error) return res.status(400).json({ message: error });
+  const reason = slotError(date);
+  if (reason) return res.json({ available: false, seatsLeft: 0, reason });
 
   const seatsLeft = Math.max(R.MAX_SEATS - (await seatsTaken(date)), 0);
-  res.json({ available: seatsLeft >= people, seatsLeft });
+  const available = seatsLeft >= people;
+  res.json({
+    available,
+    seatsLeft,
+    ...(available ? {} : { reason: "No hay lugar para esa cantidad de personas" }),
+  });
+};
+
+// Todos los horarios de un día, listos para armar el selector del front
+export const listSlots = async (req, res) => {
+  const day = req.query.date; // AAAA-MM-DD
+  const people = Number(req.query.people);
+
+  const dayStart = new Date(`${day}T00:00:00-03:00`);
+  const dayEnd = new Date(dayStart.getTime() + DAY_MS);
+
+  const existing = await Reservation.find({
+    status: { $in: ACTIVE },
+    date: {
+      $gt: new Date(dayStart.getTime() - R.DURATION_MS),
+      $lt: new Date(dayEnd.getTime() + R.DURATION_MS),
+    },
+  }).select("date people");
+
+  const slots = [];
+  for (let hour = R.OPENING_HOUR; hour < R.CLOSING_HOUR; hour++) {
+    for (const minutes of [0, 30]) {
+      const date = new Date(dayStart.getTime() + (hour * 60 + minutes) * 60 * 1000);
+      const time = `${pad(hour)}:${pad(minutes)}`;
+
+      const invalid = slotError(date);
+      const seatsLeft = invalid ? 0 : Math.max(R.MAX_SEATS - seatsTakenIn(existing, date), 0);
+      const available = !invalid && seatsLeft >= people;
+      const reason = invalid || (available ? null : "No hay lugar para esa cantidad de personas");
+
+      slots.push({
+        time,
+        dateTime: `${day}T${time}:00-03:00`, // listo para mandar al reservar
+        available,
+        seatsLeft,
+        ...(reason ? { reason } : {}),
+      });
+    }
+  }
+
+  res.json({ date: day, people, slots });
 };
 
 export const createReservation = async (req, res) => {
@@ -75,6 +135,18 @@ export const createReservation = async (req, res) => {
     return res.status(409).json({
       message: `Ya tienes ${R.MAX_ACTIVE_PER_CLIENT} reservas activas. Cancela una para hacer otra`,
     });
+  }
+
+  // El mismo cliente no puede tener dos reservas que se superpongan en horario
+  const ownOverlap = await Reservation.exists({
+    user: req.user._id,
+    status: { $in: ACTIVE },
+    date: overlapRange(date),
+  });
+  if (ownOverlap) {
+    return res
+      .status(409)
+      .json({ message: "Ya tienes una reserva en un horario que se superpone con ese" });
   }
 
   if ((await seatsTaken(date)) + people > R.MAX_SEATS) {
