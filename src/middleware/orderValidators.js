@@ -1,9 +1,10 @@
 import { body } from "express-validator";
+import { RESTAURANT } from "../config/restaurant.js";
 
 export const orderRules = [
   body("table")
-    .isInt({ min: 1 })
-    .withMessage("El número de mesa debe ser un entero mayor o igual a 1")
+    .isInt({ min: 1, max: RESTAURANT.MAX_TABLES })
+    .withMessage(`El número de mesa debe ser un entero entre 1 y ${RESTAURANT.MAX_TABLES}`)
     .toInt(),
   body("items").isArray({ min: 1 }).withMessage("El pedido debe tener al menos un producto"),
   body("items.*.productId").isMongoId().withMessage("Hay un producto con ID inválido"),
