@@ -12,6 +12,7 @@ import adminRoutes from "../routes/admin.routes.js";
 import contactRoutes from "../routes/contact.routes.js";
 import reservationRoutes from "../routes/reservation.routes.js";
 import infoRoutes from "../routes/info.routes.js";
+import menuRoutes from "../routes/menu.routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -34,6 +35,7 @@ app.get("/api/health", (req, res) => {
 
 // Rutas de la API (siempre ANTES del 404)
 app.use("/api/info", infoRoutes);
+app.use("/api/menu", menuRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
