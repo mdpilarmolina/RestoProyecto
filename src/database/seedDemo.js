@@ -17,12 +17,16 @@ const img = (text) => `https://placehold.co/600x400?text=${encodeURIComponent(te
 const products = [
   {
     name: "Empanadas tucumanas (x3)",
+    category: "entradas",
+    sortOrder: 10,
     price: 5400,
     description: "Tres empanadas de carne cortada a cuchillo, con cebolla de verdeo y comino.",
     ingredients: ["carne", "cebolla de verdeo", "comino", "huevo", "masa"],
   },
   {
     name: "Provoleta a la parrilla",
+    category: "entradas",
+    sortOrder: 11,
     price: 7200,
     description: "Provolone derretido a la parrilla con orégano y un toque de ají molido.",
     ingredients: ["provolone", "orégano", "ají molido"],
@@ -30,6 +34,8 @@ const products = [
   },
   {
     name: "Vigilante",
+    category: "postres",
+    sortOrder: 30,
     price: 4500,
     description: "Queso fresco con dulce de membrillo, el postre clásico del bodegón.",
     ingredients: ["queso fresco", "dulce de membrillo"],
@@ -37,12 +43,16 @@ const products = [
   },
   {
     name: "Milanesa napolitana",
+    category: "principales",
+    sortOrder: 20,
     price: 10500,
     description: "Milanesa de ternera con jamón, queso y salsa de tomate, con papas fritas.",
     ingredients: ["ternera", "jamón", "queso", "tomate", "papas"],
   },
   {
     name: "Bife de chorizo",
+    category: "principales",
+    sortOrder: 21,
     price: 14800,
     description: "Corte grueso a la parrilla, con ensalada mixta de la casa.",
     ingredients: ["bife de chorizo", "lechuga", "tomate", "cebolla"],
@@ -50,6 +60,8 @@ const products = [
   },
   {
     name: "Asado de tira",
+    category: "principales",
+    sortOrder: 22,
     price: 15900,
     description: "Costillar a la parrilla cocido lento, con papas rústicas.",
     ingredients: ["asado de tira", "papas", "sal gruesa"],
@@ -57,6 +69,8 @@ const products = [
   },
   {
     name: "Ravioles de ricota",
+    category: "principales",
+    sortOrder: 23,
     price: 9600,
     description: "Ravioles caseros de ricota y espinaca con salsa fileto.",
     ingredients: ["ricota", "espinaca", "tomate", "albahaca"],
@@ -64,6 +78,8 @@ const products = [
   },
   {
     name: "Ensalada de lentejas",
+    category: "entradas",
+    sortOrder: 12,
     price: 7600,
     description: "Lentejas con zanahoria, morrón asado, cebolla morada y aceto.",
     ingredients: ["lentejas", "zanahoria", "morrón", "cebolla morada"],
@@ -73,6 +89,8 @@ const products = [
   },
   {
     name: "Locro criollo",
+    category: "principales",
+    sortOrder: 24,
     price: 9800,
     description: "Guiso tradicional de maíz, zapallo y carnes. Solo en temporada de invierno.",
     ingredients: ["maíz", "zapallo", "porotos", "chorizo", "panceta"],
@@ -80,6 +98,8 @@ const products = [
   },
   {
     name: "Flan casero con dulce de leche",
+    category: "postres",
+    sortOrder: 31,
     price: 4800,
     description: "Flan casero con dulce de leche y crema.",
     ingredients: ["leche", "huevo", "azúcar", "dulce de leche", "crema"],
@@ -87,6 +107,8 @@ const products = [
   },
   {
     name: "Limonada con menta y jengibre",
+    category: "bebidas",
+    sortOrder: 40,
     price: 3000,
     description: "Limonada exprimida, con menta fresca y jengibre.",
     ingredients: ["limón", "menta", "jengibre"],
@@ -96,6 +118,8 @@ const products = [
   },
   {
     name: "Agua saborizada de pomelo y romero",
+    category: "bebidas",
+    sortOrder: 41,
     price: 3200,
     description: "Agua saborizada casera con pomelo y un toque de romero.",
     ingredients: ["pomelo", "romero"],
@@ -105,6 +129,8 @@ const products = [
   },
   {
     name: "Copa de Malbec",
+    category: "bebidas",
+    sortOrder: 42,
     price: 4200,
     description: "Copa de Malbec de la casa.",
     ingredients: ["vino Malbec"],
@@ -114,6 +140,8 @@ const products = [
   },
   {
     name: "Café",
+    category: "bebidas",
+    sortOrder: 43,
     price: 2800,
     description: "Café de filtro, con o sin leche.",
     ingredients: ["café"],

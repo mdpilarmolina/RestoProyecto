@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   checkAvailability,
+  listSlots,
   createReservation,
   listMyReservations,
   cancelReservation,
@@ -10,6 +11,7 @@ import { authenticate, requireRole } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import {
   availabilityRules,
+  slotsRules,
   reservationRules,
   reservationIdRule,
   checkinRules,
@@ -21,6 +23,7 @@ const router = Router();
 router.use(authenticate, requireRole("client"));
 
 router.get("/availability", availabilityRules, validate, checkAvailability);
+router.get("/slots", slotsRules, validate, listSlots);
 router.get("/mine", listMyReservations);
 router.post("/", reservationRules, validate, createReservation);
 router.patch("/:id/cancel", reservationIdRule, validate, cancelReservation);

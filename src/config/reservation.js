@@ -3,6 +3,7 @@ const HOUR = 60 * MINUTE;
 
 export const RESERVATION = {
   MAX_SEATS: Number(process.env.MAX_SEATS) || 40, // personas en simultáneo
+  MAX_PEOPLE: 12, // personas máximas por reserva
   OPENING_HOUR: Number(process.env.OPENING_HOUR) || 12, // primera hora de reserva (hora local)
   CLOSING_HOUR: Number(process.env.CLOSING_HOUR) || 23, // no se aceptan reservas que empiecen desde esta hora
   DURATION_MS: 2 * HOUR, // cuánto tiempo ocupa el lugar una reserva

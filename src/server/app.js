@@ -11,6 +11,7 @@ import accountRoutes from "../routes/account.routes.js";
 import adminRoutes from "../routes/admin.routes.js";
 import contactRoutes from "../routes/contact.routes.js";
 import reservationRoutes from "../routes/reservation.routes.js";
+import infoRoutes from "../routes/info.routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -32,6 +33,7 @@ app.get("/api/health", (req, res) => {
 });
 
 // Rutas de la API (siempre ANTES del 404)
+app.use("/api/info", infoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
@@ -48,11 +50,27 @@ app.use((req, res) => {
 // Manejo central de errores
 app.use((err, req, res, next) => {
   console.error(err);
-  const status = err.status || 500;
-  const message =
-    status === 500 && process.env.NODE_ENV === "production"
-      ? "Error interno del servidor"
-      : err.message || "Error interno del servidor";
+
+  let status = err.status || 500;
+  let message = err.message || "Error interno del servidor";
+
+  if (err.code === 11000) {
+    // Dato único repetido (por ejemplo, dos registros con el mismo email al mismo tiempo)
+    status = 409;
+    message = err.keyPattern?.email
+      ? "El email ya está registrado"
+      : "Ya existe un registro con esos datos";
+  } else if (err.name === "ValidationError") {
+    status = 400; // el mensaje de Mongoose ya está en español (lo definimos en los modelos)
+  } else if (err.name === "CastError") {
+    status = 400;
+    message = "Datos inválidos";
+  }
+
+  if (status === 500 && process.env.NODE_ENV === "production") {
+    message = "Error interno del servidor";
+  }
+
   res.status(status).json({ message });
 });
 
